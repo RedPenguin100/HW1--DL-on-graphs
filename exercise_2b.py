@@ -8,13 +8,9 @@ from sklearn.preprocessing import MinMaxScaler
 
 from ts_generator import generate_ar_k
 
-sc = None
+
 def get_data():
     training_set = np.array([generate_ar_k(np.array([0.9]), N=1440, noise_func=np.random.normal)]).transpose()
-
-    # training_set = pd.read_csv('airpassengers.csv')
-    # Just a numpy array
-    # training_set = training_set.iloc[:, 1:2].values
 
     def sliding_windows(data, seq_length):
         x = []
@@ -58,7 +54,7 @@ model.add_module('relu1', torch.nn.Sigmoid())
 model.add_module('dense2', torch.nn.Linear(8, 1))
 
 loss = torch.nn.MSELoss(reduction='mean')
-optimizer = optim.SGD(model.parameters(), lr=0.0611,momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.0611, momentum=0.9)
 
 
 def train(model, loss, optimizer, inputs, labels):
@@ -77,6 +73,7 @@ def train(model, loss, optimizer, inputs, labels):
 
     return output.item()
 
+
 def predict(model, inputs):
     inputs = Variable(inputs, requires_grad=False)
     logits = model.forward(inputs)
@@ -92,15 +89,16 @@ test_accuracies = []
 for i in range(epochs):
     cost = 0.
     for j in range(n_batches):
-        Xbatch = Xtrain[j * batch_size:(j+1)*batch_size]
-        Ybatch = Ytrain[j * batch_size:(j+1)*batch_size]
+        Xbatch = Xtrain[j * batch_size:(j + 1) * batch_size]
+        Ybatch = Ytrain[j * batch_size:(j + 1) * batch_size]
         cost += train(model, loss, optimizer, Xbatch, Ybatch)
     # Xbatch = Xtrain
     # Ybatch = Ytrain
     # cost += train(model, loss, optimizer, Xbatch, Ybatch)
 
     Ypred = predict(model, Xtest)
-    print("Epoch: %d, cost(train): %.6f, cost(test): %.6f" % ((i + 1), cost, loss.forward(torch.from_numpy(Ypred), Ytest)))
+    print("Epoch: %d, cost(train): %.6f, cost(test): %.6f" % (
+    (i + 1), cost, loss.forward(torch.from_numpy(Ypred), Ytest)))
 
     costs.append(cost)
 # sc = MinMaxScaler()
@@ -117,7 +115,7 @@ plt.plot(sc.inverse_transform(Ytrain), 'r')
 plt.plot(sc.inverse_transform(TrainPred))
 plt.show()
 
-arr = Ytrain
+arr = Ytrain  # TODO: change to Ydata.
 n = len(arr)
 up_sum = 0.
 down_sum = 0.
