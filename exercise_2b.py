@@ -8,7 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from ts_generator import generate_ar_k
 
-
+sc = None
 def get_data():
     training_set = np.array([generate_ar_k(np.array([0.9]), N=1440, noise_func=np.random.normal)]).transpose()
 
