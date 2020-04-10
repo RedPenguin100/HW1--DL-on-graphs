@@ -16,4 +16,4 @@ def test_stationary():
 
 
 def test_stationary_2():
-    assert is_stationary_ar_k([3.5, -4.85, +3.325, -1.1274, +0.1512])
+    assert is_stationary_ar_k([3.5, -4.85, 3.325, -1.1274, 0.1512])

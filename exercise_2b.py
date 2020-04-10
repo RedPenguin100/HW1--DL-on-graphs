@@ -1,55 +1,20 @@
 import numpy as np
 import torch
-from torch.autograd import Variable
 from torch import optim
 import matplotlib.pyplot as plt
-import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-from ts_generator import generate_ar_k
+from utils import get_data, train, predict
 
-sc = None
-def get_data():
-    training_set = np.array([generate_ar_k(np.array([0.9]), N=1440, noise_func=np.random.normal)]).transpose()
+sc = MinMaxScaler()
+seq_length = 4
+alpha_array = np.array([0.9])
 
-    def sliding_windows(data, seq_length):
-        x = []
-        y = []
-        for i in range(len(data) - seq_length - 1):
-            _x = data[i:(i + seq_length)].squeeze()
-            _y = data[i + seq_length]
-            x.append(_x)
-            y.append(_y)
-        return np.array(x), np.array(y)
-
-    global sc
-    sc = MinMaxScaler()
-    # Scale the result to 0 to 1.
-    training_data = sc.fit_transform(training_set)
-
-    seq_length = 4
-    x, y = sliding_windows(training_data, seq_length)
-
-    train_size = int(len(y) * 0.67)
-    test_size = len(y) - train_size
-    dataX = Variable(torch.Tensor(np.array(x)))
-    dataY = Variable(torch.Tensor(np.array(y)))
-
-    trainX = Variable(torch.Tensor(np.array(x[0:train_size])))
-    trainY = Variable(torch.Tensor(np.array(y[0:train_size])))
-
-    testX = Variable(torch.Tensor(np.array(x[train_size:len(x)])))
-    testY = Variable(torch.Tensor(np.array(y[train_size:len(y)])))
-
-    return trainX, testX, trainY, testY
-
-
-# get the data
-Xtrain, Xtest, Ytrain, Ytest = get_data()
+Xtrain, Xtest, Ytrain, Ytest, dataX, dataY = get_data(alpha_array, series_length=1440, seq_length=seq_length, sc=sc)
 
 # The model will be a sequence of layers (?)
 model = torch.nn.Sequential()
-model.add_module('dense1', torch.nn.Linear(4, 8))
+model.add_module('dense1', torch.nn.Linear(seq_length, 8))
 model.add_module('relu1', torch.nn.Sigmoid())
 model.add_module('dense2', torch.nn.Linear(8, 1))
 
@@ -57,30 +22,7 @@ loss = torch.nn.MSELoss(reduction='mean')
 optimizer = optim.SGD(model.parameters(), lr=0.0611, momentum=0.9)
 
 
-def train(model, loss, optimizer, inputs, labels):
-    inputs = Variable(inputs)
-    labels = Variable(labels)
-
-    optimizer.zero_grad()
-
-    # Forward
-    logits = model.forward(inputs)
-    output = loss.forward(logits, labels)
-
-    # Backward
-    output.backward()
-    optimizer.step()
-
-    return output.item()
-
-
-def predict(model, inputs):
-    inputs = Variable(inputs, requires_grad=False)
-    logits = model.forward(inputs)
-    return logits.data.numpy()
-
-
-epochs = 2000
+epochs = 200  # Increase amount of epochs for better accuracy.
 batch_size = 32
 n_batches = Xtrain.size()[0] // batch_size
 
@@ -92,27 +34,25 @@ for i in range(epochs):
         Xbatch = Xtrain[j * batch_size:(j + 1) * batch_size]
         Ybatch = Ytrain[j * batch_size:(j + 1) * batch_size]
         cost += train(model, loss, optimizer, Xbatch, Ybatch)
-    # Xbatch = Xtrain
-    # Ybatch = Ytrain
-    # cost += train(model, loss, optimizer, Xbatch, Ybatch)
 
     Ypred = predict(model, Xtest)
     print("Epoch: %d, cost(train): %.6f, cost(test): %.6f" % (
     (i + 1), cost, loss.forward(torch.from_numpy(Ypred), Ytest)))
 
     costs.append(cost)
-# sc = MinMaxScaler()
-# real_pred = sc.inverse_transform(Ypred)
-# plt.plot(costs)
-# plt.title('Training cost')
-# plt.show()
-TrainPred = predict(model, Xtrain)
-plt.plot(sc.inverse_transform(Ytest), 'r')
-plt.plot(sc.inverse_transform(Ypred))
-plt.show()
 
+TrainPred = predict(model, Xtrain)
+
+# We will plot 2 graphs.
+
+# The training data in red, and the trained model in blue
 plt.plot(sc.inverse_transform(Ytrain), 'r')
 plt.plot(sc.inverse_transform(TrainPred))
+plt.show()
+
+# The test data in red, and the trained model in blue
+plt.plot(sc.inverse_transform(Ytest), 'r')
+plt.plot(sc.inverse_transform(Ypred))
 plt.show()
 
 arr = Ytrain  # TODO: change to Ydata.
@@ -123,4 +63,4 @@ for k in range(1, n):
     up_sum += arr[k] * arr[k - 1]
     down_sum += arr[k - 1] ** 2
 
-print(up_sum / down_sum)
+print("Estimated alpha value for the AR(1) series: {}".format(up_sum / down_sum))
