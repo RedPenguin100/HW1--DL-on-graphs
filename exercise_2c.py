@@ -46,8 +46,6 @@ for i in range(test_size):
     value = get_best_prediction(dataY[train_size - seq_length + i:train_size + i], alphas=alpha_array)
     entire_data = torch.cat((entire_data, torch.from_numpy(np.array([value])).float()), 0)
 
-
-
 best_possible_prediction = entire_data[-test_size:].view(474, 1)
 
 # Graph in red is the test model, graph in blue is the predicted model.

@@ -55,7 +55,7 @@ plt.plot(sc.inverse_transform(Ytest), 'r')
 plt.plot(sc.inverse_transform(Ypred))
 plt.show()
 
-arr = Ytrain  # TODO: change to Ydata.
+arr = dataY
 n = len(arr)
 up_sum = 0.
 down_sum = 0.
