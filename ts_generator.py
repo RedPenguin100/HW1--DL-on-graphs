@@ -31,7 +31,6 @@ def generate_ar_k(alphas: np.array, N: int, noise_func) -> np.array:
     k = len(alphas)
     if N < k:
         raise ValueError('N is too short!')
-    # TODO: Decide initial condition. Random ? zeros ? ones?
     init_condition = np.ones(k) * 1000
     ar_k_series = list(init_condition)
     while len(ar_k_series) < N:
